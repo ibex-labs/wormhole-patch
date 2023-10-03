@@ -21,4 +21,12 @@ cpi = ["no-entrypoint"]
 [dependencies]
 anchor-lang = { version = "0.28.0", features = ["init-if-needed"]}
 anchor-spl = "0.28.0"
-wormhole-anchor-sdk = { path = "../../modules/wormhole-anchor-sdk", default-features = false, features = ["token-bridge"]}
+wormhole-anchor-sdk = { version = "0.1.0-alpha.2", default-features = false, features = ["token-bridge"]}
+
+### Mainnet is on 1.14. Any patch works with this minor version works well.
+solana-program = "=1.14"
+
+### There is currently an issue using anchor-spl if this dependency is not explicitly defined. These
+### dependencies are used by spl-token-2022.
+toml_datetime = "=0.6.1"
+winnow = "=0.4.1"

@@ -1,6 +1,5 @@
 use anchor_lang::{AnchorDeserialize, AnchorSerialize};
 use std::io;
-use std::io::Read;
 use wormhole_anchor_sdk::token_bridge;
 
 const PAYLOAD_ID_HELLO: u8 = 1;
@@ -26,10 +25,7 @@ impl AnchorSerialize for HelloTokenMessage {
 }
 
 impl AnchorDeserialize for HelloTokenMessage {
-
-    fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
-        let mut buf = Vec::new();
-        reader.read(&mut buf)?;
+    fn deserialize(buf: &mut &[u8]) -> io::Result<Self> {
         match buf[0] {
             PAYLOAD_ID_HELLO => Ok(HelloTokenMessage::Hello {
                 recipient: <[u8; 32]>::deserialize(&mut &buf[1..33])?,
