@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use std::io;
+use std::io::Read;
 
 pub const PAYLOAD_ID_TRANSFER: u8 = 1;
 pub const PAYLOAD_ID_ASSET_META: u8 = 2;
@@ -23,6 +24,48 @@ pub struct TransferWithMeta {
 
 impl AnchorDeserialize for TransferWithMeta {
     fn deserialize(buf: &mut &[u8]) -> io::Result<Self> {
+        // Verify Payload ID is a token transfer with payload.
+        if buf[0] != PAYLOAD_ID_TRANSFER_WITH_PAYLOAD {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid Token Bridge Transfer With Payload",
+            ));
+        }
+
+        // Encoded amount should be the last 8 bytes of bytes 1 through 33,
+        // otherwise we will have serious issues in the Token Bridge program.
+        let amount = {
+            let mut out = [0u8; 8];
+            out.copy_from_slice(&buf[25..33]);
+            u64::from_be_bytes(out)
+        };
+
+        let mut token_address = [0u8; 32];
+        token_address.copy_from_slice(&buf[33..65]);
+
+        let token_chain = to_u16_be(&buf[65..67]);
+
+        let mut to_address = [0u8; 32];
+        to_address.copy_from_slice(&buf[67..99]);
+
+        let to_chain = to_u16_be(&buf[99..101]);
+
+        let mut from_address = [0u8; 32];
+        from_address.copy_from_slice(&buf[101..133]);
+
+        Ok(TransferWithMeta {
+            amount,
+            token_address,
+            token_chain,
+            to_address,
+            to_chain,
+            from_address,
+        })
+    }
+
+    fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
+        let mut buf = Vec::new();
+        reader.read(&mut buf)?;
         // Verify Payload ID is a token transfer with payload.
         if buf[0] != PAYLOAD_ID_TRANSFER_WITH_PAYLOAD {
             return Err(io::Error::new(

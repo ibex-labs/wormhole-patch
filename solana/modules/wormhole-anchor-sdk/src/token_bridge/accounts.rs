@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use std::{io, ops::Deref};
+use std::io::Read;
 
 use crate::token_bridge::{message::TransferWithMeta, program::ID};
 use crate::wormhole::{PostedVaa, CHAIN_ID_SOLANA};
@@ -165,7 +166,9 @@ impl TransferWithPayload {
 }
 
 impl AnchorDeserialize for TransferWithPayload {
-    fn deserialize(buf: &mut &[u8]) -> io::Result<Self> {
+    fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
+        let mut buf = Vec::new();
+        reader.read(&mut buf)?;
         Ok(TransferWithPayload {
             meta: TransferWithMeta::deserialize(&mut &buf[..133])?,
             payload: buf[133..].to_vec(),
@@ -235,7 +238,9 @@ impl<P: AnchorDeserialize + AnchorSerialize + Copy> TransferWith<P> {
 }
 
 impl<P: AnchorSerialize + AnchorDeserialize> AnchorDeserialize for TransferWith<P> {
-    fn deserialize(buf: &mut &[u8]) -> io::Result<Self> {
+    fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
+        let mut buf = Vec::new();
+        reader.read(&mut buf)?;
         Ok(TransferWith {
             meta: TransferWithMeta::deserialize(&mut &buf[..133])?,
             payload: P::deserialize(&mut &buf[133..])?,

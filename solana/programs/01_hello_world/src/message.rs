@@ -1,5 +1,6 @@
 use anchor_lang::{prelude::Pubkey, AnchorDeserialize, AnchorSerialize};
 use std::io;
+use std::io::Read;
 
 const PAYLOAD_ID_ALIVE: u8 = 0;
 const PAYLOAD_ID_HELLO: u8 = 1;
@@ -46,7 +47,9 @@ impl AnchorSerialize for HelloWorldMessage {
 }
 
 impl AnchorDeserialize for HelloWorldMessage {
-    fn deserialize(buf: &mut &[u8]) -> io::Result<Self> {
+    fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
+        let mut buf = Vec::new();
+        reader.read(&mut buf)?;
         match buf[0] {
             PAYLOAD_ID_ALIVE => Ok(HelloWorldMessage::Alive {
                 program_id: Pubkey::try_from(&buf[1..33]).unwrap(),
